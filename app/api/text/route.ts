@@ -1,0 +1,104 @@
+import { NextRequest } from 'next/server';
+import { computeScore, InvalidNameError } from '@/lib/scoring';
+import { getCachedResult, setCachedResult } from '@/lib/cache/store';
+import { checkIpRateLimit } from '@/lib/ratelimit/ip';
+import { checkGlobalDailyLimit } from '@/lib/ratelimit/global';
+import { defaultGenerator } from '@/lib/ai';
+import { env } from '@/lib/env';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+function clientIp(req: NextRequest): string {
+  const xff = req.headers.get('x-forwarded-for');
+  if (xff) {
+    const first = xff.split(',')[0];
+    if (first) return first.trim();
+  }
+  const real = req.headers.get('x-real-ip');
+  if (real) return real;
+  return 'unknown';
+}
+
+export async function POST(req: NextRequest) {
+  let body: { a?: string; b?: string };
+  try {
+    body = await req.json();
+  } catch {
+    return Response.json({ error: 'invalid_json' }, { status: 400 });
+  }
+
+  const { a, b } = body;
+  if (typeof a !== 'string' || typeof b !== 'string') {
+    return Response.json({ error: 'missing_names' }, { status: 400 });
+  }
+
+  let result;
+  try {
+    result = computeScore(a, b);
+  } catch (err) {
+    if (err instanceof InvalidNameError) {
+      return Response.json({ error: 'invalid_name', which: err.which }, { status: 422 });
+    }
+    throw err;
+  }
+
+  // Cache hit → serve cached text immediately
+  const cached = await getCachedResult(a, b);
+  if (cached) {
+    return new Response(cached.aiText, {
+      headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Enishi-Cache': 'hit' },
+    });
+  }
+
+  // Cache miss → enforce rate limits before paying for an AI call
+  const ip = clientIp(req);
+  const cfg = env();
+
+  const ipCheck = await checkIpRateLimit(ip, cfg.RATE_LIMIT_PER_IP_HOURLY);
+  if (!ipCheck.allowed) {
+    return Response.json(
+      { error: 'rate_limit_ip', resetAt: ipCheck.resetAt },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((ipCheck.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
+  const globalCheck = await checkGlobalDailyLimit(cfg.GLOBAL_DAILY_LIMIT);
+  if (!globalCheck.allowed) {
+    return Response.json(
+      { error: 'rate_limit_global', resetAt: globalCheck.resetAt },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((globalCheck.resetAt - Date.now()) / 1000)) } }
+    );
+  }
+
+  // Stream from Claude
+  const generation = await defaultGenerator().generate(result);
+
+  let buffer = '';
+  const encoder = new TextEncoder();
+  const responseStream = new ReadableStream<Uint8Array>({
+    async start(controller) {
+      try {
+        for await (const chunk of generation.textStream) {
+          buffer += chunk;
+          controller.enqueue(encoder.encode(chunk));
+        }
+        controller.close();
+        await setCachedResult(a, b, {
+          percentage: result.percentage,
+          subScores: result.subScores,
+          tagline: result.tagline,
+          aiText: buffer,
+          generatedAt: Date.now(),
+        });
+      } catch (err) {
+        console.error('[api/text] stream error', err);
+        controller.error(err);
+      }
+    },
+  });
+
+  return new Response(responseStream, {
+    headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Enishi-Cache': 'miss' },
+  });
+}
