@@ -1,0 +1,15 @@
+node_modules
+.next
+.git
+.gitignore
+.env
+.env.*.local
+.superpowers
+docs
+playwright-report
+test-results
+coverage
+README.md
+**/*.test.ts
+**/*.test.tsx
+tests/e2e
