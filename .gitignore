@@ -1,0 +1,38 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
+
+# testing
+coverage/
+playwright-report/
+test-results/
+.vitest-cache/
+
+# next.js
+.next/
+out/
+build/
+next-env.d.ts
+
+# production
+*.tsbuildinfo
+
+# env files
+.env
+.env*.local
+
+# brainstorm artefacts
+.superpowers/
+
+# misc
+.DS_Store
+*.pem
+.idea/
+.vscode/
