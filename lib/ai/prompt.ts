@@ -22,7 +22,7 @@ Décomposition :
 - Résonance des lettres : ${subScores.resonance}/100
 - Harmonie vocalique : ${subScores.harmony}/100
 - Cadence : ${subScores.cadence}/100
-- Numérologie : ${subScores.numerology}/100
+- Empreinte numérologique : ${subScores.numerology}/100
 
 Écris un seul paragraphe poétique en français qui raconte cette concordance.
 Appuie-toi subtilement sur les sous-scores remarquables (les plus hauts comme les plus bas) pour donner du relief, sans jamais citer leurs noms ni leurs chiffres.

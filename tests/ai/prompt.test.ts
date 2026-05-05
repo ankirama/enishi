@@ -25,10 +25,10 @@ describe('buildPrompt', () => {
 
   it('includes all four sub-scores by name and value', () => {
     const { user } = buildPrompt(sample);
-    expect(user).toMatch(/résonance.*82/i);
-    expect(user).toMatch(/harmonie.*71/i);
-    expect(user).toMatch(/cadence.*65/i);
-    expect(user).toMatch(/numérologie.*88/i);
+    expect(user).toMatch(/Résonance.*82/);
+    expect(user).toMatch(/Harmonie.*71/);
+    expect(user).toMatch(/Cadence.*65/);
+    expect(user).toMatch(/Empreinte numérologique.*88/);
   });
 
   it('produces a non-empty system prompt', () => {
