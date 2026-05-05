@@ -6,12 +6,14 @@ services:
     image: enishi:latest
     ports:
       - "3000:3000"
+    # Loads .env at the repo root directly into the container, no shell substitution
+    # needed (zod has defaults for RATE_LIMIT_PER_IP_HOURLY and GLOBAL_DAILY_LIMIT).
+    env_file:
+      - ../.env
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      # Override REDIS_URL: inside the compose network, the host is `redis`,
+      # not `localhost` (which would point to the container itself).
       REDIS_URL: redis://redis:6379
-      RATE_LIMIT_PER_IP_HOURLY: ${RATE_LIMIT_PER_IP_HOURLY:-10}
-      GLOBAL_DAILY_LIMIT: ${GLOBAL_DAILY_LIMIT:-500}
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://enishi.fr}
     depends_on:
       redis:
         condition: service_healthy
