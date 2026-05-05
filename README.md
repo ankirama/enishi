@@ -34,7 +34,7 @@ Mets ta vraie clé Anthropic dans `.env` ainsi que `TRUSTED_PROXY=true` si un re
 docker compose --env-file .env -f docker/docker-compose.yml up -d --build
 ```
 
-Le flag `--env-file .env` est nécessaire pour que Compose résolve `${HOST_PORT}` et `${NEXT_PUBLIC_SITE_URL}` (build arg) depuis le `.env` à la racine. Les autres variables (Anthropic key, Redis URL, rate limits) sont chargées dans le container via `env_file:` du compose.
+Le flag `--env-file .env` est nécessaire : toutes les variables (Anthropic key, rate limits, `HOST_PORT`, `NEXT_PUBLIC_SITE_URL` build arg, `TRUSTED_PROXY`) sont substituées via `${VAR}` dans le compose. Si tu déploies via un UI type Dockhand / Portainer, tu peux mettre les variables directement dans l'interface — pas besoin du `--env-file`.
 
 `HOST_PORT` permet de changer le port publié sur l'hôte (par défaut 3000) — pratique sur un NAS où 3000 est déjà pris. Le port interne du container reste 3000.
 

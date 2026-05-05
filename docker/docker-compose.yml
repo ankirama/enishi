@@ -10,13 +10,15 @@ services:
       # HOST_PORT is the port published to the host (NAS / VPS / dev machine).
       # The container always listens on 3000 (Next.js standalone, set in Dockerfile).
       - "${HOST_PORT:-3000}:3000"
-    # Loads .env at the repo root directly into the container, no shell substitution
-    # needed (zod has defaults for RATE_LIMIT_PER_IP_HOURLY and GLOBAL_DAILY_LIMIT).
-    env_file:
-      - ../.env
+    # Explicit env mapping (compatible with Dockhand / portainer-style UIs that
+    # set vars via shell or --env-file rather than mounting an .env into the project).
     environment:
-      # Override REDIS_URL: inside the compose network, the host is `redis`,
-      # not `localhost` (which would point to the container itself).
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      RATE_LIMIT_PER_IP_HOURLY: ${RATE_LIMIT_PER_IP_HOURLY:-10}
+      GLOBAL_DAILY_LIMIT: ${GLOBAL_DAILY_LIMIT:-500}
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+      TRUSTED_PROXY: ${TRUSTED_PROXY:-true}
+      # Hardcoded — inside the compose network the host is `redis`, not `localhost`.
       REDIS_URL: redis://redis:6379
     depends_on:
       redis:
