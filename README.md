@@ -31,12 +31,16 @@ npm run typecheck
 Mets ta vraie clé Anthropic dans `.env` ainsi que `TRUSTED_PROXY=true` si un reverse proxy est devant, puis :
 
 ```bash
-docker compose -f docker/docker-compose.yml up -d --build
+docker compose --env-file .env -f docker/docker-compose.yml up -d --build
 ```
 
-Compose charge automatiquement `.env` via `env_file:` — pas besoin de `--env-file`.
+Le flag `--env-file .env` est nécessaire pour que Compose résolve `${HOST_PORT}` et `${NEXT_PUBLIC_SITE_URL}` (build arg) depuis le `.env` à la racine. Les autres variables (Anthropic key, Redis URL, rate limits) sont chargées dans le container via `env_file:` du compose.
 
-Mets un reverse proxy (Caddy / Traefik / nginx) devant pour HTTPS et `X-Forwarded-For`.
+`HOST_PORT` permet de changer le port publié sur l'hôte (par défaut 3000) — pratique sur un NAS où 3000 est déjà pris. Le port interne du container reste 3000.
+
+`NEXT_PUBLIC_SITE_URL` doit être présente au moment du build : Next.js inline les `NEXT_PUBLIC_*` dans le bundle compilé (pas au runtime). Si tu changes l'URL publique, rebuild avec `--build`.
+
+Mets un reverse proxy (Caddy / Traefik / Nginx Proxy Manager) devant pour HTTPS et `X-Forwarded-For`.
 
 ## Variables d'environnement
 
