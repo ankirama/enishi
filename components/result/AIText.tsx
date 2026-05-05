@@ -5,6 +5,7 @@ import { AITextSkeleton } from './AITextSkeleton';
 interface AITextProps {
   a: string;
   b: string;
+  initialText?: string;
 }
 
 type FetchState =
@@ -18,10 +19,16 @@ const ERROR_COPY: Record<Extract<FetchState, { kind: 'error' }>['reason'], strin
   failed: 'Le scribe est momentanément silencieux, mais les nombres parlent d’eux-mêmes.',
 };
 
-export function AIText({ a, b }: AITextProps) {
-  const [state, setState] = useState<FetchState>({ kind: 'loading', text: '' });
+export function AIText({ a, b, initialText }: AITextProps) {
+  const [state, setState] = useState<FetchState>(
+    initialText !== undefined
+      ? { kind: 'done', text: initialText }
+      : { kind: 'loading', text: '' }
+  );
 
   useEffect(() => {
+    if (initialText !== undefined) return; // Already have the text from cache, skip fetch
+
     const controller = new AbortController();
 
     (async () => {
@@ -69,7 +76,7 @@ export function AIText({ a, b }: AITextProps) {
     })();
 
     return () => controller.abort();
-  }, [a, b]);
+  }, [a, b, initialText]);
 
   if (state.kind === 'error') {
     return (

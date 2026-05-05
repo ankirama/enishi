@@ -6,6 +6,7 @@ import { HeroSection } from '@/components/result/HeroSection';
 import { ScoresSection } from '@/components/result/ScoresSection';
 import { ActionsSection } from '@/components/result/ActionsSection';
 import { AIText } from '@/components/result/AIText';
+import { getCachedResult } from '@/lib/cache/store';
 
 interface SearchParams {
   a?: string;
@@ -83,6 +84,15 @@ export default async function Page({ searchParams }: PageProps) {
     throw err;
   }
 
+  let initialText: string | undefined;
+  try {
+    const cached = await getCachedResult(a, b);
+    initialText = cached?.aiText;
+  } catch (err) {
+    console.error('[page] cache lookup failed', err);
+    // Continue without initialText — the client will try to fetch
+  }
+
   return (
     <main>
       <Brand showBackLink />
@@ -100,7 +110,7 @@ export default async function Page({ searchParams }: PageProps) {
         >
           le mot des nombres
         </div>
-        <AIText a={result.inputs.a} b={result.inputs.b} />
+        <AIText a={result.inputs.a} b={result.inputs.b} initialText={initialText} />
       </section>
       <ThinDivider />
       <ScoresSection scores={result.subScores} />
