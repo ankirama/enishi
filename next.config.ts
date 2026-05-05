@@ -3,7 +3,7 @@ import type { NextConfig } from 'next';
 const nextConfig: NextConfig = {
   output: 'standalone',
   experimental: {
-    optimizePackageImports: ['@ai-sdk/react', 'ioredis'],
+    optimizePackageImports: ['ioredis'],
   },
   async headers() {
     return [
