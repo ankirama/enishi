@@ -28,4 +28,11 @@ describe('parseEnv', () => {
   it('throws when REDIS_URL is malformed', () => {
     expect(() => parseEnv({ ...baseValid, REDIS_URL: 'not-a-url' })).toThrow();
   });
+
+  it('TRUSTED_PROXY parses booleanish strings', () => {
+    expect(parseEnv({ ...baseValid, TRUSTED_PROXY: 'true' }).TRUSTED_PROXY).toBe(true);
+    expect(parseEnv({ ...baseValid, TRUSTED_PROXY: '1' }).TRUSTED_PROXY).toBe(true);
+    expect(parseEnv({ ...baseValid, TRUSTED_PROXY: 'no' }).TRUSTED_PROXY).toBe(false);
+    expect(parseEnv(baseValid).TRUSTED_PROXY).toBe(false); // default
+  });
 });

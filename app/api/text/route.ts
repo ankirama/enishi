@@ -9,7 +9,13 @@ import { env } from '@/lib/env';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-function clientIp(req: NextRequest): string {
+function clientIp(req: NextRequest, trustProxy: boolean): string {
+  if (!trustProxy) {
+    // Without a trusted proxy, XFF/X-Real-IP can be spoofed by the client.
+    // Fall back to a single shared bucket so misconfigured deployments fail
+    // closed (everyone shares one rate limit) instead of failing open.
+    return 'no-trusted-proxy';
+  }
   const xff = req.headers.get('x-forwarded-for');
   if (xff) {
     const first = xff.split(',')[0];
@@ -52,8 +58,8 @@ export async function POST(req: NextRequest) {
   }
 
   // Cache miss → enforce rate limits before paying for an AI call
-  const ip = clientIp(req);
   const cfg = env();
+  const ip = clientIp(req, cfg.TRUSTED_PROXY);
 
   const ipCheck = await checkIpRateLimit(ip, cfg.RATE_LIMIT_PER_IP_HOURLY);
   if (!ipCheck.allowed) {

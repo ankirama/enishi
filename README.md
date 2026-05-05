@@ -41,6 +41,7 @@ Mets un reverse proxy (Caddy / Traefik / nginx) devant pour HTTPS et `X-Forwarde
 | `REDIS_URL` | `redis://redis:6379` | URL Redis |
 | `RATE_LIMIT_PER_IP_HOURLY` | `10` | Nouvelles générations max par IP par heure |
 | `GLOBAL_DAILY_LIMIT` | `500` | Plafond global de générations IA / jour |
+| `TRUSTED_PROXY` | `false` | Mettre à `true` quand un reverse proxy gère X-Forwarded-For (sinon spoofable) |
 | `NEXT_PUBLIC_SITE_URL` | `https://enishi.fr` | URL publique |
 
 Voir [`docs/superpowers/specs/2026-05-05-enishi-design.md`](docs/superpowers/specs/2026-05-05-enishi-design.md) pour la spec complète.
