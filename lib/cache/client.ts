@@ -10,8 +10,10 @@ export function getRedis(): RedisClient {
   if (!globalThis.__enishi_redis) {
     globalThis.__enishi_redis = new Redis(env().REDIS_URL, {
       lazyConnect: false,
-      maxRetriesPerRequest: 3,
+      maxRetriesPerRequest: 1,
       enableReadyCheck: true,
+      enableOfflineQueue: false,
+      connectTimeout: 2000,
     });
 
     globalThis.__enishi_redis.on('error', (err) => {
