@@ -29,4 +29,10 @@ describe('cache store', () => {
     await setCachedResult('Marie', 'Paul', sample);
     expect(await getCachedResult('Paul', 'Marie')).toEqual(sample);
   });
+
+  it('refuses to cache oversized aiText (>5000 chars)', async () => {
+    const oversized = { ...sample, aiText: 'a'.repeat(5001) };
+    await setCachedResult('Marie', 'Paul', oversized);
+    expect(await getCachedResult('Marie', 'Paul')).toBeNull();
+  });
 });
