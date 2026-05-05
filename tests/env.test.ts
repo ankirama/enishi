@@ -5,7 +5,7 @@ describe('parseEnv', () => {
   const baseValid = {
     ANTHROPIC_API_KEY: 'sk-ant-test',
     REDIS_URL: 'redis://localhost:6379',
-    NEXT_PUBLIC_SITE_URL: 'https://enishi.fr',
+    SITE_URL: 'https://enishi.fr',
   };
 
   it('accepts the base config and applies defaults', () => {

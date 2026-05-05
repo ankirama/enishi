@@ -10,7 +10,7 @@ const schema = z.object({
     .toLowerCase()
     .transform((v) => v === 'true' || v === '1' || v === 'yes')
     .default('false'),
-  NEXT_PUBLIC_SITE_URL: z.string().url().default('http://localhost:3000'),
+  SITE_URL: z.string().url().default('http://localhost:3000'),
 });
 
 export type Env = z.infer<typeof schema>;

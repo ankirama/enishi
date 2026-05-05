@@ -10,4 +10,4 @@ vi.mock('@/lib/cache/client', () => {
 // Provide minimal env stubs so lib/env doesn't blow up if imported
 process.env.ANTHROPIC_API_KEY ??= 'sk-ant-test';
 process.env.REDIS_URL ??= 'redis://localhost:6379';
-process.env.NEXT_PUBLIC_SITE_URL ??= 'http://localhost:3000';
+process.env.SITE_URL ??= 'http://localhost:3000';

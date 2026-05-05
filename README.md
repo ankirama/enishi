@@ -34,11 +34,11 @@ Mets ta vraie clé Anthropic dans `.env` ainsi que `TRUSTED_PROXY=true` si un re
 docker compose --env-file .env -f docker/docker-compose.yml up -d --build
 ```
 
-Le flag `--env-file .env` est nécessaire : toutes les variables (Anthropic key, rate limits, `HOST_PORT`, `NEXT_PUBLIC_SITE_URL` build arg, `TRUSTED_PROXY`) sont substituées via `${VAR}` dans le compose. Si tu déploies via un UI type Dockhand / Portainer, tu peux mettre les variables directement dans l'interface — pas besoin du `--env-file`.
+Le flag `--env-file .env` est nécessaire : toutes les variables (Anthropic key, rate limits, `HOST_PORT`, `SITE_URL`, `TRUSTED_PROXY`) sont substituées via `${VAR}` dans le compose. Si tu déploies via un UI type Dockhand / Portainer, tu peux mettre les variables directement dans l'interface — pas besoin du `--env-file`.
 
 `HOST_PORT` permet de changer le port publié sur l'hôte (par défaut 3000) — pratique sur un NAS où 3000 est déjà pris. Le port interne du container reste 3000.
 
-`NEXT_PUBLIC_SITE_URL` doit être présente au moment du build : Next.js inline les `NEXT_PUBLIC_*` dans le bundle compilé (pas au runtime). Si tu changes l'URL publique, rebuild avec `--build`.
+`SITE_URL` est lue au runtime côté serveur (pas inlinée au build). Tu peux changer l'URL publique sans rebuild — un simple `up -d` redémarre avec la nouvelle valeur.
 
 Mets un reverse proxy (Caddy / Traefik / Nginx Proxy Manager) devant pour HTTPS et `X-Forwarded-For`.
 
@@ -51,6 +51,7 @@ Mets un reverse proxy (Caddy / Traefik / Nginx Proxy Manager) devant pour HTTPS 
 | `RATE_LIMIT_PER_IP_HOURLY` | `10` | Nouvelles générations max par IP par heure |
 | `GLOBAL_DAILY_LIMIT` | `500` | Plafond global de générations IA / jour (cap des coûts Anthropic) |
 | `TRUSTED_PROXY` | `false` | Mettre à `true` quand un reverse proxy gère X-Forwarded-For (sinon spoofable) |
-| `NEXT_PUBLIC_SITE_URL` | `http://localhost:3000` | URL publique (pour les OG images partagées) |
+| `SITE_URL` | `http://localhost:3000` | URL publique (pour les OG images partagées). Lue au runtime — change-la sans rebuild |
+| `HOST_PORT` | `3000` | Port publié sur l'hôte (le container écoute toujours sur 3000 en interne) |
 
 Voir [`docs/superpowers/specs/2026-05-05-enishi-design.md`](docs/superpowers/specs/2026-05-05-enishi-design.md) pour la spec complète.

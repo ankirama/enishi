@@ -3,8 +3,6 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
-      args:
-        NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
     image: enishi:latest
     ports:
       # HOST_PORT is the port published to the host (NAS / VPS / dev machine).
@@ -16,7 +14,7 @@ services:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
       RATE_LIMIT_PER_IP_HOURLY: ${RATE_LIMIT_PER_IP_HOURLY:-10}
       GLOBAL_DAILY_LIMIT: ${GLOBAL_DAILY_LIMIT:-500}
-      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL}
+      SITE_URL: ${SITE_URL}
       TRUSTED_PROXY: ${TRUSTED_PROXY:-true}
       # Hardcoded — inside the compose network the host is `redis`, not `localhost`.
       REDIS_URL: redis://redis:6379

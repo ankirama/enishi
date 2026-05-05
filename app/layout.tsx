@@ -3,11 +3,12 @@ import type { Metadata } from 'next';
 
 // Module-level metadata runs at build time too; we can't call env() here
 // (that would force ANTHROPIC_API_KEY/REDIS_URL to be set during `next build`).
-// metadataBase is presentation-only — fallback to localhost is harmless.
+// SITE_URL (no NEXT_PUBLIC_ prefix) is read at server runtime, NOT inlined at build —
+// so the same image works for any deployment URL. Fallback to localhost is harmless.
 export const metadata: Metadata = {
   title: 'Enishi — la concordance des prénoms',
   description: 'Calcule la compatibilité poétique entre deux prénoms.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(process.env.SITE_URL ?? 'http://localhost:3000'),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
