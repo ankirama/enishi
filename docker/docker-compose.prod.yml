@@ -1,0 +1,44 @@
+# Production compose: pulls the prebuilt image from GHCR, no local build needed.
+# Use this in Dockhand / Portainer / on a VPS without a git checkout.
+#
+# Pull manually if needed: docker compose -f docker/docker-compose.prod.yml pull
+# Then: docker compose -f docker/docker-compose.prod.yml up -d
+#
+# Required env vars (set via shell, --env-file, or your UI):
+#   ANTHROPIC_API_KEY, SITE_URL
+# Optional:
+#   HOST_PORT (default 3000), RATE_LIMIT_PER_IP_HOURLY (10),
+#   GLOBAL_DAILY_LIMIT (500), TRUSTED_PROXY (true — assumes a proxy is in front)
+
+services:
+  app:
+    image: ghcr.io/ankirama/enishi:latest
+    pull_policy: always
+    ports:
+      - "${HOST_PORT:-3000}:3000"
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      RATE_LIMIT_PER_IP_HOURLY: ${RATE_LIMIT_PER_IP_HOURLY:-10}
+      GLOBAL_DAILY_LIMIT: ${GLOBAL_DAILY_LIMIT:-500}
+      SITE_URL: ${SITE_URL}
+      TRUSTED_PROXY: ${TRUSTED_PROXY:-true}
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  redis-data:

@@ -26,21 +26,33 @@ npm run test:e2e    # playwright (nécessite Redis up)
 npm run typecheck
 ```
 
-## Production (self-host)
+## Production — depuis l'image prébuilte (recommandé)
 
-Mets ta vraie clé Anthropic dans `.env` ainsi que `TRUSTED_PROXY=true` si un reverse proxy est devant, puis :
+Une image multi-arch (amd64 + arm64) est publiée automatiquement sur **`ghcr.io/ankirama/enishi:latest`** à chaque push sur `main` (workflow `.github/workflows/publish.yml`). C'est le mode recommandé pour Dockhand / Portainer / un VPS sans checkout git.
+
+```bash
+# Récupère juste le compose prod (pas besoin du repo entier)
+curl -O https://raw.githubusercontent.com/Ankirama/Enishi/main/docker/docker-compose.prod.yml
+
+# Crée un .env avec au minimum ANTHROPIC_API_KEY et SITE_URL
+docker compose --env-file .env -f docker-compose.prod.yml up -d
+```
+
+Sur Dockhand / Portainer : importe `docker-compose.prod.yml` et renseigne les variables via l'UI. L'image est tirée automatiquement à chaque démarrage (`pull_policy: always`).
+
+> **Première fois** : le package GHCR est privé par défaut. Va sur https://github.com/users/Ankirama/packages/container/enishi/settings et passe la visibilité en `public` pour que Dockhand puisse pull sans auth. Une seule fois.
+
+Mets un reverse proxy (Caddy / Traefik / Nginx Proxy Manager) devant pour HTTPS et `X-Forwarded-For`.
+
+## Production — build local
+
+Si tu préfères builder toi-même :
 
 ```bash
 docker compose --env-file .env -f docker/docker-compose.yml up -d --build
 ```
 
-Le flag `--env-file .env` est nécessaire : toutes les variables (Anthropic key, rate limits, `HOST_PORT`, `SITE_URL`, `TRUSTED_PROXY`) sont substituées via `${VAR}` dans le compose. Si tu déploies via un UI type Dockhand / Portainer, tu peux mettre les variables directement dans l'interface — pas besoin du `--env-file`.
-
-`HOST_PORT` permet de changer le port publié sur l'hôte (par défaut 3000) — pratique sur un NAS où 3000 est déjà pris. Le port interne du container reste 3000.
-
-`SITE_URL` est lue au runtime côté serveur (pas inlinée au build). Tu peux changer l'URL publique sans rebuild — un simple `up -d` redémarre avec la nouvelle valeur.
-
-Mets un reverse proxy (Caddy / Traefik / Nginx Proxy Manager) devant pour HTTPS et `X-Forwarded-For`.
+`HOST_PORT` permet de changer le port publié (par défaut 3000). `SITE_URL` est lue au runtime — change-la sans rebuild.
 
 ## Variables d'environnement
 
