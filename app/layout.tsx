@@ -1,10 +1,11 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { env } from '@/lib/env';
 
 export const metadata: Metadata = {
   title: 'Enishi — la concordance des prénoms',
   description: 'Calcule la compatibilité poétique entre deux prénoms.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000'),
+  metadataBase: new URL(env().NEXT_PUBLIC_SITE_URL),
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
