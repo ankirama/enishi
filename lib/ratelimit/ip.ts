@@ -6,6 +6,15 @@ export interface RateLimitOutcome {
   resetAt: number;
 }
 
+/**
+ * Per-IP rate limit using a FIXED window (not sliding).
+ *
+ * A user can technically burn `limit` requests at HH:59:30 and another `limit` at
+ * (HH+1):00:30 — i.e., 2*limit in one minute around the boundary. For the v1 MVP
+ * this is acceptable; the global daily limit (lib/ratelimit/global.ts) provides a
+ * hard cost ceiling regardless. Switch to a sorted-set sliding window if burstiness
+ * becomes a real problem in production.
+ */
 const WINDOW_SECONDS = 3600;
 
 export async function checkIpRateLimit(ip: string, limit: number): Promise<RateLimitOutcome> {
