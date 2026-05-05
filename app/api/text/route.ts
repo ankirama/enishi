@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { computeScore, InvalidNameError } from '@/lib/scoring';
 import { getCachedResult, setCachedResult } from '@/lib/cache/store';
-import { checkIpRateLimit } from '@/lib/ratelimit/ip';
+import { checkIpRateLimit, type RateLimitOutcome } from '@/lib/ratelimit/ip';
 import { checkGlobalDailyLimit } from '@/lib/ratelimit/global';
 import { defaultGenerator } from '@/lib/ai';
 import { env } from '@/lib/env';
@@ -49,36 +49,65 @@ export async function POST(req: NextRequest) {
     throw err;
   }
 
-  // Cache hit → serve cached text immediately
-  const cached = await getCachedResult(a, b);
+  // Cache hit → serve cached text immediately. If Redis is down, treat as miss.
+  let cached: Awaited<ReturnType<typeof getCachedResult>> = null;
+  try {
+    cached = await getCachedResult(a, b);
+  } catch (err) {
+    console.error('[api/text] cache lookup failed, treating as miss', err);
+  }
   if (cached) {
     return new Response(cached.aiText, {
       headers: { 'Content-Type': 'text/plain; charset=utf-8', 'X-Enishi-Cache': 'hit' },
     });
   }
 
-  // Cache miss → enforce rate limits before paying for an AI call
+  // Cache miss → enforce rate limits before paying for an AI call.
+  // If Redis is down, fail closed (503) for cost control.
   const cfg = env();
   const ip = clientIp(req, cfg.TRUSTED_PROXY);
 
-  const ipCheck = await checkIpRateLimit(ip, cfg.RATE_LIMIT_PER_IP_HOURLY);
-  if (!ipCheck.allowed) {
+  let ipCheck: RateLimitOutcome;
+  let globalCheck: RateLimitOutcome;
+  try {
+    ipCheck = await checkIpRateLimit(ip, cfg.RATE_LIMIT_PER_IP_HOURLY);
+    globalCheck = await checkGlobalDailyLimit(cfg.GLOBAL_DAILY_LIMIT);
+  } catch (err) {
+    console.error('[api/text] rate-limit check failed, refusing request', err);
     return Response.json(
-      { error: 'rate_limit_ip', resetAt: ipCheck.resetAt },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((ipCheck.resetAt - Date.now()) / 1000)) } }
+      { error: 'rate_limit_unavailable' },
+      { status: 503, headers: { 'Retry-After': '30' } }
     );
   }
 
-  const globalCheck = await checkGlobalDailyLimit(cfg.GLOBAL_DAILY_LIMIT);
+  if (!ipCheck.allowed) {
+    return Response.json(
+      { error: 'rate_limit_ip', resetAt: ipCheck.resetAt },
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((ipCheck.resetAt - Date.now()) / 1000)),
+          'X-Enishi-Rate-Limit': 'ip',
+        },
+      }
+    );
+  }
+
   if (!globalCheck.allowed) {
     return Response.json(
       { error: 'rate_limit_global', resetAt: globalCheck.resetAt },
-      { status: 429, headers: { 'Retry-After': String(Math.ceil((globalCheck.resetAt - Date.now()) / 1000)) } }
+      {
+        status: 429,
+        headers: {
+          'Retry-After': String(Math.ceil((globalCheck.resetAt - Date.now()) / 1000)),
+          'X-Enishi-Rate-Limit': 'global',
+        },
+      }
     );
   }
 
   // Stream from Claude
-  const generation = await defaultGenerator().generate(result);
+  const generation = await defaultGenerator().generate(result, { abortSignal: req.signal });
 
   let buffer = '';
   const encoder = new TextEncoder();

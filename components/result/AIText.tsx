@@ -42,10 +42,11 @@ export function AIText({ a, b, initialText }: AITextProps) {
 
         if (!res.ok) {
           if (res.status === 429) {
-            const data = (await res.json().catch(() => null)) as
-              | { error?: 'rate_limit_ip' | 'rate_limit_global'; resetAt?: number }
-              | null;
-            const reason = data?.error === 'rate_limit_global' ? 'rate_limit_global' : 'rate_limit_ip';
+            const kind = res.headers.get('X-Enishi-Rate-Limit');
+            const reason: 'rate_limit_ip' | 'rate_limit_global' =
+              kind === 'global' ? 'rate_limit_global' : 'rate_limit_ip';
+            // Try to read resetAt from JSON body (best-effort, may fail)
+            const data = (await res.json().catch(() => null)) as { resetAt?: number } | null;
             setState({ kind: 'error', reason, resetAt: data?.resetAt });
             return;
           }

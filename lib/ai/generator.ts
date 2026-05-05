@@ -7,6 +7,10 @@ export interface TextGenerationResult {
   fullText: Promise<string>;
 }
 
+export interface GenerateOptions {
+  abortSignal?: AbortSignal;
+}
+
 export interface TextGenerator {
-  generate(result: ScoreResult): Promise<TextGenerationResult>;
+  generate(result: ScoreResult, options?: GenerateOptions): Promise<TextGenerationResult>;
 }
